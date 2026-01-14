@@ -1,0 +1,7 @@
+{
+  "name": "AI风水大师 (AI Feng Shui Master)",
+  "description": "一个结合AI视觉与家居智慧的房间风水评测工具，支持布局编辑与上传分析。",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
