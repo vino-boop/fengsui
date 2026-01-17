@@ -23,18 +23,25 @@ export const analyzeLayout = async (
   config: CompassConfig,
   imageBase64?: string
 ): Promise<AnalysisResult> => {
-  // 按照准则，在调用前实例化以确保使用最新的 Key。
-  // process.env.API_KEY 会由 AI Studio 自动注入。
+  // 按照准则，在调用前获取最新的 Key
   const apiKey = process.env.API_KEY;
   
-  if (!apiKey && typeof window !== 'undefined') {
-    const hasKey = await window.aistudio.hasSelectedApiKey();
+  // 检查是否具备可用的 Key 环境
+  if ((!apiKey || apiKey === 'undefined') && typeof window !== 'undefined') {
+    const aistudio = (window as any).aistudio;
+    const hasKey = aistudio && typeof aistudio.hasSelectedApiKey === 'function' 
+      ? await aistudio.hasSelectedApiKey() 
+      : false;
+      
     if (!hasKey) {
       throw new Error("法力源尚未配置。请返回首页通过“启用法器”配置 API Key。");
     }
   }
 
-  const ai = new GoogleGenAI({ apiKey: apiKey || '' });
+  // 即使 process.env.API_KEY 在此时看起来为空，
+  // 只要用户在 aistudio 中选择了 Key，底层的 fetch 拦截器通常会自动处理。
+  // 但我们必须传入一个非空字符串来避开 SDK 的前端校验。
+  const ai = new GoogleGenAI({ apiKey: apiKey || 'managed-by-aistudio' });
   
   const layoutDescription = items.map(item => {
     const meta = FURNITURE_METADATA[item.type];

@@ -8,45 +8,61 @@ interface Props {
 const RegistrationPage: React.FC<Props> = ({ onComplete }) => {
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
   const [hasEnvKey, setHasEnvKey] = useState(true);
   const [hasSelectedKey, setHasSelectedKey] = useState(false);
 
   useEffect(() => {
     const checkKeyStatus = async () => {
+      // 检查环境变量是否有效
       const envKey = process.env.API_KEY;
-      // In some environments, process.env.API_KEY might be the literal string 'undefined' if not set
-      if (!envKey || envKey === 'undefined') {
+      const isKeyInvalid = !envKey || envKey === 'undefined' || envKey === '';
+      
+      if (isKeyInvalid) {
         setHasEnvKey(false);
-        // Using type casting to access the pre-configured aistudio global provided by the environment
         const aistudio = (window as any).aistudio;
         if (aistudio && typeof aistudio.hasSelectedApiKey === 'function') {
-          const selected = await aistudio.hasSelectedApiKey();
-          setHasSelectedKey(selected);
+          try {
+            const selected = await aistudio.hasSelectedApiKey();
+            setHasSelectedKey(selected);
+          } catch (e) {
+            console.error("Error checking key status", e);
+          }
         }
+      } else {
+        setHasEnvKey(true);
       }
     };
     checkKeyStatus();
   }, []);
 
   const handleSelectKey = async () => {
+    setIsSelecting(true);
     try {
-      // Using type casting to access the pre-configured aistudio global provided by the environment
       const aistudio = (window as any).aistudio;
       if (aistudio && typeof aistudio.openSelectKey === 'function') {
         await aistudio.openSelectKey();
-        // Per guidelines, assume success after triggering the selection dialog
+        // 准则：触发后即假设成功，允许用户继续
         setHasSelectedKey(true);
+      } else {
+        console.error("aistudio.openSelectKey is not available");
+        alert("未检测到法器接口（aistudio bridge）。若在预览环境，请确保已启用 API Key 选择功能。");
       }
     } catch (err) {
       console.error("Failed to open key selector", err);
+      alert("唤起法器失败，请稍后再试。");
+    } finally {
+      setIsSelecting(false);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    
+    // 如果没有环境变量也没有选择过 Key，提示用户
     if (!hasEnvKey && !hasSelectedKey) {
-      alert("请先配置法力源（API Key）以开启推演引擎。");
+      alert("请先点击下方“启用法器”配置 API Key，否则无法开启推演。");
       return;
     }
     
@@ -89,17 +105,18 @@ const RegistrationPage: React.FC<Props> = ({ onComplete }) => {
 
           {!hasEnvKey && (
             <div className="space-y-3 p-4 bg-stone-100 dark:bg-stone-800/50 rounded-2xl border border-dashed border-stone-300 dark:border-stone-700">
-              <p className="text-[10px] font-bold text-stone-500 mb-2">未检测到法力源（系统环境变量）</p>
+              <p className="text-[10px] font-bold text-stone-500 mb-2">未检测到系统法力源</p>
               <button
                 type="button"
                 onClick={handleSelectKey}
+                disabled={isSelecting}
                 className={`w-full py-3 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 ${
                   hasSelectedKey 
                   ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                  : 'bg-stone-900 text-white dark:bg-gold dark:text-stone-900'
+                  : 'bg-stone-900 text-white dark:bg-gold dark:text-stone-900 hover:scale-[1.02] active:scale-95'
                 }`}
               >
-                {hasSelectedKey ? '✅ 法力源已就绪' : '🔑 启用法器 (配置 API Key)'}
+                {isSelecting ? '正在启灵...' : (hasSelectedKey ? '✅ 法力源已配置' : '🔑 启用法器 (配置 API Key)')}
               </button>
               <p className="text-[8px] text-stone-400 mt-2">
                 需使用已启用计费的 API Key。详见 <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="underline hover:text-gold">计费文档</a>
