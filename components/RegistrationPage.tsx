@@ -84,7 +84,7 @@ const RegistrationPage: React.FC<Props> = ({ onComplete }) => {
             <span className="text-white dark:text-stone-900">☯</span>
           </div>
           <div className="space-y-1">
-            <h1 className="text-3xl font-black tracking-tighter text-stone-900 dark:text-gold-light">缘起 · 登科</h1>
+            <h1 className="text-3xl font-black tracking-tighter text-stone-900 dark:text-gold-light">运何 · 堪舆</h1>
             <p className="text-[10px] font-bold text-stone-400 dark:text-gold/40 uppercase tracking-[0.3em]">Identity Verification</p>
           </div>
         </div>

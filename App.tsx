@@ -92,7 +92,7 @@ const App: React.FC = () => {
                <span className="text-white dark:text-stone-900">☯</span>
              </div>
              <div>
-               <h1 className="text-lg font-black tracking-tight dark:text-gold-light">灵枢 · 风水局</h1>
+               <h1 className="text-lg font-black tracking-tight dark:text-gold-light">运何 · 堪舆</h1>
                <p className="text-[8px] font-bold text-stone-500 dark:text-gold/40 uppercase tracking-[0.2em]">Zen Intelligence Engine</p>
              </div>
           </div>
@@ -228,7 +228,7 @@ const App: React.FC = () => {
       )}
 
       <footer className={`fixed bottom-6 left-1/2 -translate-x-1/2 glass px-6 py-2 rounded-full text-[10px] font-bold text-stone-400 dark:text-gold/30 tracking-widest uppercase z-50 transition-opacity duration-1000 ${appState === 'onboarding' ? 'opacity-0' : 'opacity-100'}`}>
-        AI Feng Shui Master · Professional Edition V3.0
+        YunHe Feng Shui Master · Professional Edition V3.0
       </footer>
     </div>
   );

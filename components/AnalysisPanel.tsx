@@ -19,7 +19,7 @@ const AnalysisPanel: React.FC<Props> = ({ result, onReset }) => {
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold/10 text-gold text-[10px] font-black tracking-widest uppercase">
               Authenticated Digital Decree
             </div>
-            <h2 className="text-5xl font-black tracking-tight text-stone-900 dark:text-white">宅邸堪舆气象报告</h2>
+            <h2 className="text-5xl font-black tracking-tight text-stone-900 dark:text-white">运何堪舆气象报告</h2>
             <p className="text-stone-400 dark:text-stone-500 max-w-md font-medium leading-relaxed">
               基于千年堪舆智慧与深度学习算法，为您解析居住空间的能量场分布。
             </p>
