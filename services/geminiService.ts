@@ -23,8 +23,18 @@ export const analyzeLayout = async (
   config: CompassConfig,
   imageBase64?: string
 ): Promise<AnalysisResult> => {
-  // 确保使用 process.env.API_KEY 初始化
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // 按照准则，在调用前实例化以确保使用最新的 Key。
+  // process.env.API_KEY 会由 AI Studio 自动注入。
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey && typeof window !== 'undefined') {
+    const hasKey = await window.aistudio.hasSelectedApiKey();
+    if (!hasKey) {
+      throw new Error("法力源尚未配置。请返回首页通过“启用法器”配置 API Key。");
+    }
+  }
+
+  const ai = new GoogleGenAI({ apiKey: apiKey || '' });
   
   const layoutDescription = items.map(item => {
     const meta = FURNITURE_METADATA[item.type];
@@ -129,11 +139,14 @@ export const analyzeLayout = async (
     if (!text) throw new Error("AI 未返回有效内容");
     
     return JSON.parse(text);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Analysis Error:", error);
-    if (error instanceof Error && error.message.includes("API_KEY")) {
-      throw new Error("API_KEY 配置错误。请确保在 Vercel 环境变量中设置了 API_KEY。");
+    
+    const message = error.message || "";
+    if (message.includes("Requested entity was not found") || message.includes("API Key")) {
+      throw new Error("法力源识别失败。请检查 API Key 是否属于已启用计费的 GCP 项目，或尝试重新选择。");
     }
+    
     throw new Error("堪舆推演中途受阻，请检查网络连接或稍后再试。");
   }
 };

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface Props {
   onComplete: (name: string) => void;
@@ -8,12 +8,49 @@ interface Props {
 const RegistrationPage: React.FC<Props> = ({ onComplete }) => {
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasEnvKey, setHasEnvKey] = useState(true);
+  const [hasSelectedKey, setHasSelectedKey] = useState(false);
+
+  useEffect(() => {
+    const checkKeyStatus = async () => {
+      const envKey = process.env.API_KEY;
+      // In some environments, process.env.API_KEY might be the literal string 'undefined' if not set
+      if (!envKey || envKey === 'undefined') {
+        setHasEnvKey(false);
+        // Using type casting to access the pre-configured aistudio global provided by the environment
+        const aistudio = (window as any).aistudio;
+        if (aistudio && typeof aistudio.hasSelectedApiKey === 'function') {
+          const selected = await aistudio.hasSelectedApiKey();
+          setHasSelectedKey(selected);
+        }
+      }
+    };
+    checkKeyStatus();
+  }, []);
+
+  const handleSelectKey = async () => {
+    try {
+      // Using type casting to access the pre-configured aistudio global provided by the environment
+      const aistudio = (window as any).aistudio;
+      if (aistudio && typeof aistudio.openSelectKey === 'function') {
+        await aistudio.openSelectKey();
+        // Per guidelines, assume success after triggering the selection dialog
+        setHasSelectedKey(true);
+      }
+    } catch (err) {
+      console.error("Failed to open key selector", err);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    if (!hasEnvKey && !hasSelectedKey) {
+      alert("请先配置法力源（API Key）以开启推演引擎。");
+      return;
+    }
+    
     setIsSubmitting(true);
-    // 模拟一个庄严的加载过程
     setTimeout(() => {
       onComplete(name);
     }, 1200);
@@ -21,10 +58,8 @@ const RegistrationPage: React.FC<Props> = ({ onComplete }) => {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#fcfaf7] dark:bg-[#0c0a09] transition-colors duration-1000">
-      {/* 背景装饰 */}
       <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150vw] h-[150vw] border-[1px] border-stone-900 dark:border-gold rounded-full animate-[spin_60s_linear_infinite]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[100vw] border-[1px] border-stone-900 dark:border-gold rounded-full animate-[spin_40s_linear_infinite_reverse] opacity-50" />
       </div>
 
       <div className={`max-w-md w-full glass p-10 md:p-16 rounded-[3rem] apple-shadow text-center space-y-10 transition-all duration-1000 ${isSubmitting ? 'scale-90 opacity-0 blur-lg' : 'scale-100 opacity-100 blur-0'}`}>
@@ -52,9 +87,29 @@ const RegistrationPage: React.FC<Props> = ({ onComplete }) => {
             />
           </div>
 
+          {!hasEnvKey && (
+            <div className="space-y-3 p-4 bg-stone-100 dark:bg-stone-800/50 rounded-2xl border border-dashed border-stone-300 dark:border-stone-700">
+              <p className="text-[10px] font-bold text-stone-500 mb-2">未检测到法力源（系统环境变量）</p>
+              <button
+                type="button"
+                onClick={handleSelectKey}
+                className={`w-full py-3 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 ${
+                  hasSelectedKey 
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                  : 'bg-stone-900 text-white dark:bg-gold dark:text-stone-900'
+                }`}
+              >
+                {hasSelectedKey ? '✅ 法力源已就绪' : '🔑 启用法器 (配置 API Key)'}
+              </button>
+              <p className="text-[8px] text-stone-400 mt-2">
+                需使用已启用计费的 API Key。详见 <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="underline hover:text-gold">计费文档</a>
+              </p>
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={!name.trim() || isSubmitting}
+            disabled={!name.trim() || isSubmitting || (!hasEnvKey && !hasSelectedKey)}
             className="w-full py-5 bg-stone-900 dark:bg-gold text-white dark:text-stone-900 rounded-full font-black text-sm tracking-[0.4em] uppercase shadow-xl hover:scale-[1.03] active:scale-95 disabled:opacity-30 disabled:grayscale transition-all"
           >
             {isSubmitting ? '正在启灵...' : '进入局中'}
@@ -67,7 +122,6 @@ const RegistrationPage: React.FC<Props> = ({ onComplete }) => {
         </p>
       </div>
       
-      {/* 底部禅语 */}
       <div className="absolute bottom-12 text-center w-full px-6">
         <p className="text-[11px] font-serif italic text-stone-300 dark:text-stone-800 tracking-widest animate-pulse">
           “ 夫宅者，乃是阴阳之枢纽，人伦之轨模。 ”
